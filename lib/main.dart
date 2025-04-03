@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'LoginPage.dart'; // Import the Login Screen
+import 'SplashScreen.dart';
+import 'LoginPage.dart';
+import 'SignUpPage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,41 +18,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const SplashScreen(), // Show SplashScreen first
-    );
-  }
-}
-
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
-  _SplashScreenState createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Auto transition after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.blue.shade900,
-      body: Center(
-        child: Image.asset(
-          'assets/splash_screen.png',
-          width: 200,
-        ),
-      ),
+      initialRoute: '/splash',
+      routes: {
+        '/splash': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/signup': (context) => SignUpPage(),
+      },
     );
   }
 }

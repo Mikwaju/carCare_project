@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+class SignUpPage extends StatelessWidget {
+  const SignUpPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,10 +14,12 @@ class LoginScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // Logo
                 Image.asset('assets/Logo.png', width: 180),
                 const SizedBox(height: 20),
+                // "Sign Up" Title
                 Text(
-                  "Login",
+                  "Sign Up",
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -32,7 +34,7 @@ class LoginScreen extends StatelessWidget {
                     prefixIcon: Icon(
                       Icons.phone,
                       color: Colors.blue,
-                      size: 24, // Adjust size as needed
+                      size: 24,
                     ),
                     labelText: "Enter your mobile number",
                     border: OutlineInputBorder(
@@ -41,7 +43,22 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 15),
-
+                // Email Field
+                TextField(
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(
+                      Icons.email,
+                      color: Colors.blue,
+                      size: 24,
+                    ),
+                    labelText: "Enter your email",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
                 // Password Field
                 TextField(
                   obscureText: true,
@@ -49,12 +66,12 @@ class LoginScreen extends StatelessWidget {
                     prefixIcon: Icon(
                       Icons.lock_open,
                       color: Colors.blue,
-                      size: 24, // Adjust size as needed
+                      size: 24,
                     ),
                     suffixIcon: Icon(
                       Icons.visibility,
                       color: Colors.grey,
-                      size: 24,// Adjust size as needed
+                      size: 24,
                     ),
                     labelText: "Enter your password",
                     border: OutlineInputBorder(
@@ -62,86 +79,67 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-
-                // Forgot Password
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      "Forgot password?",
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // Login Button
+                const SizedBox(height: 20),
+                // Sign Up Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[900], // Button background color
-                      foregroundColor: Colors.white, // Text color
+                      backgroundColor: Colors.blue[900],
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     child: const Text(
-                      "Login",
+                      "Sign Up",
                       style: TextStyle(fontSize: 18),
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Sign Up Option
+                // Sign In Option
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Don’t have an account?"),
+                    const Text("Already have an account?"),
                     TextButton(
                       onPressed: () {
-                        // Navigate to Sign Up page
-                        Navigator.pushNamed(context, '/signup');
+                        Navigator.pushNamed(context, '/login');
                       },
                       child: const Text(
-                        "Sign Up",
+                        "Sign In",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
-
                 // OR Divider
                 const Text("or", style: TextStyle(color: Colors.black54)),
                 const SizedBox(height: 10),
-
-                // Google Sign-In
+                // Google Sign-Up
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () {},
                     icon: Image.asset('assets/Google.png', width: 24),
-                    label: const Text("Continue with Google"),
+                    label: const Text("Sign up with Google"),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
-
-                // Apple Sign-In
+                // Apple Sign-Up
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () {},
                     icon: Image.asset('assets/Apple logo.png', width: 24),
-                    label: const Text("Continue with Apple"),
+                    label: const Text("Sign up with Apple"),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
