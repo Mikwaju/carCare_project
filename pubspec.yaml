@@ -12,6 +12,7 @@ dependencies:
     sdk: flutter
   flutter_launcher_icons: ^0.14.3
   cupertino_icons: ^1.0.8
+  fl_chart: ^0.63.0 # make sure this is the latest version
 
 dev_dependencies:
   flutter_test:

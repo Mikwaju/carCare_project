@@ -81,7 +81,9 @@ class LoginScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/dashboard');
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[900], // Button background color
                       foregroundColor: Colors.white, // Text color
