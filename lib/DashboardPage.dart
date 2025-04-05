@@ -15,22 +15,71 @@ class DashboardScreen extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 10),
-              const Text("IST 2025, Saloon Car", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              _buildStatusCard(),
-              const SizedBox(height: 10),
-              _buildBatteryChart(),
-              const SizedBox(height: 10),
-              _buildTirePressureSection(),
-            ],
-          ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              color: Colors.blue[900], // Background color for top items
+              width: double.infinity, // Ensures it spans the full width
+              padding: const EdgeInsets.all(16.0), // Padding inside the blue area
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 40),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "IST 2025, Saloon Car",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white, // White text for visibility
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              // Add your notification action here
+                            },
+                            icon: const Icon(
+                              Icons.notifications,
+                              color: Colors.white,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              // Add your map/navigation action here
+                            },
+                            icon: const Icon(
+                              Icons.map,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  _buildStatusCard(),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 10),
+                  _buildBatteryChart(),
+                  const SizedBox(height: 10),
+                  _buildTirePressureSection(),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -40,7 +89,10 @@ class DashboardScreen extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: const Icon(Icons.lock, color: Colors.blue),
-        title: const Text("Door Closed", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Door Closed",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: const Text("Door Status - Today 8:00am"),
         trailing: const Icon(Icons.check_circle, color: Colors.green),
       ),
@@ -54,26 +106,32 @@ class DashboardScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Vehicle Battery Voltage", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              "Vehicle Battery Voltage",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
             SizedBox(
               height: 150,
               child: LineChart(
                 LineChartData(
-                  titlesData: FlTitlesData(show: false),
+                  titlesData: const FlTitlesData(show: false),
                   borderData: FlBorderData(show: false),
                   lineBarsData: [
                     LineChartBarData(
                       isCurved: true,
-                      spots: [
-                        const FlSpot(0, 12),
-                        const FlSpot(1, 13.5),
-                        const FlSpot(2, 13),
-                        const FlSpot(3, 12.8),
-                        const FlSpot(4, 12.5),
-                        const FlSpot(5, 12),
+                      spots: const [
+                        FlSpot(0, 12),
+                        FlSpot(1, 13.5),
+                        FlSpot(2, 13),
+                        FlSpot(3, 12.8),
+                        FlSpot(4, 12.5),
+                        FlSpot(5, 12),
                       ],
-                      belowBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.3)),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: Colors.blue.withOpacity(0.3),
+                      ),
                     ),
                   ],
                 ),
@@ -92,7 +150,10 @@ class DashboardScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Tire Pressure", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              "Tire Pressure",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
             GridView.count(
               shrinkWrap: true,
@@ -133,8 +194,14 @@ class _TirePressureWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text("${pressure.toStringAsFixed(1)} PSI", style: const TextStyle(fontWeight: FontWeight.bold)),
-        Text(title, style: const TextStyle(fontSize: 12)),
+        Text(
+          "${pressure.toStringAsFixed(1)} PSI",
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 12),
+        ),
       ],
     );
   }
