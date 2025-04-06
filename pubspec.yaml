@@ -13,6 +13,7 @@ dependencies:
   flutter_launcher_icons: ^0.14.3
   cupertino_icons: ^1.0.8
   fl_chart: ^0.63.0 # make sure this is the latest version
+  google_maps_flutter: ^2.7.0
 
 dev_dependencies:
   flutter_test:
