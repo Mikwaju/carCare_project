@@ -51,7 +51,13 @@ class DashboardScreen extends StatelessWidget {
                           ),
                           IconButton(
                             onPressed: () {
-                              // Add your map/navigation action here
+                              // Navigate to MapsScreen when the map icon is clicked
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MapsScreen(),
+                                ),
+                              );
                             },
                             icon: const Icon(
                               Icons.map,
@@ -203,6 +209,26 @@ class _TirePressureWidget extends StatelessWidget {
           style: const TextStyle(fontSize: 12),
         ),
       ],
+    );
+  }
+}
+
+class MapsScreen extends StatelessWidget {
+  const MapsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Map"),
+        backgroundColor: Colors.blue[900],
+      ),
+      body: const Center(
+        child: Text(
+          "Map Screen - Add your map here!",
+          style: TextStyle(fontSize: 20),
+        ),
+      ),
     );
   }
 }
