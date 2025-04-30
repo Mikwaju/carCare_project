@@ -1,10 +1,13 @@
 import 'package:carcare/DashboardPage.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'SplashScreen.dart';
-import 'LoginPage.dart';
-import 'SignUpPage.dart';
+import 'login signup/screens/LoginPage.dart';
+import 'login signup/screens/SignUpPage.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
