@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:carcare/MapScreen.dart'; // Replace with your actual import path'; // Replace with your actual import path
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -20,9 +21,9 @@ class DashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              color: Colors.blue[900], // Background color for top items
-              width: double.infinity, // Ensures it spans the full width
-              padding: const EdgeInsets.all(16.0), // Padding inside the blue area
+              color: Colors.blue[900],
+              width: double.infinity,
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -35,23 +36,19 @@ class DashboardScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white, // White text for visibility
+                          color: Colors.white,
                         ),
                       ),
                       Row(
                         children: [
                           IconButton(
                             onPressed: () {
-                              // Add your notification action here
+                              // Add notification logic here
                             },
-                            icon: const Icon(
-                              Icons.notifications,
-                              color: Colors.white,
-                            ),
+                            icon: const Icon(Icons.notifications, color: Colors.white),
                           ),
                           IconButton(
                             onPressed: () {
-                              // Navigate to MapsScreen when the map icon is clicked
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -59,10 +56,7 @@ class DashboardScreen extends StatelessWidget {
                                 ),
                               );
                             },
-                            icon: const Icon(
-                              Icons.map,
-                              color: Colors.white,
-                            ),
+                            icon: const Icon(Icons.map, color: Colors.white),
                           ),
                         ],
                       ),
@@ -209,26 +203,6 @@ class _TirePressureWidget extends StatelessWidget {
           style: const TextStyle(fontSize: 12),
         ),
       ],
-    );
-  }
-}
-
-class MapsScreen extends StatelessWidget {
-  const MapsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Map"),
-        backgroundColor: Colors.blue[900],
-      ),
-      body: const Center(
-        child: Text(
-          "Map Screen - Add your map here!",
-          style: TextStyle(fontSize: 20),
-        ),
-      ),
     );
   }
 }
