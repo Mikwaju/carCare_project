@@ -3,7 +3,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:carcare/MapScreen.dart'; // Replace with your actual MapsScreen path
+import 'package:carcare/ProfileScreen.dart'; // Replace with your actual ProfileScreen path
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -13,18 +15,39 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  String carType = "Loading..."; // Default while fetching
+  String carType = "Loading...";
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseDatabase _database = FirebaseDatabase.instance;
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+  FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
     super.initState();
+    print("Current user UID: ${_auth.currentUser!.uid}");
     _fetchUserData();
+    _initializeNotifications();
   }
 
-  // Fetch carType from Firestore
+  Future<void> _initializeNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+    AndroidInitializationSettings('app_icon');
+    final InitializationSettings initializationSettings =
+    InitializationSettings(android: initializationSettingsAndroid);
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  Future<void> _showNotification(String title, String body) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    AndroidNotificationDetails('car_care_channel', 'Car Care Alerts',
+        importance: Importance.max, priority: Priority.high);
+    const NotificationDetails platformChannelSpecifics =
+    NotificationDetails(android: androidPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin
+        .show(0, title, body, platformChannelSpecifics);
+  }
+
   Future<void> _fetchUserData() async {
     User? user = _auth.currentUser;
     if (user != null) {
@@ -56,7 +79,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
         onTap: (index) {
-          // Add navigation logic if needed (e.g., to Report or Profile screens)
+          switch (index) {
+            case 0:
+            // Already on Dashboard
+              break;
+            case 2:
+            // Navigate to ProfileScreen
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+              break;
+          }
+          // Add navigation logic if needed
         },
       ),
       body: SingleChildScrollView(
@@ -94,12 +129,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           IconButton(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const MapsScreen(),
-                                ),
-                              );
+                              if (_auth.currentUser != null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MapsScreen(userId: _auth.currentUser!.uid),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Please log in to view the map")),
+                                );
+                              }
                             },
                             icon: const Icon(Icons.map, color: Colors.white),
                           ),
@@ -141,19 +182,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .child('vehicleData/status')
           .onValue,
       builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data?.snapshot.value == null) {
-          print("No status snapshot data");
+        if (snapshot.hasError) {
+          print("Status snapshot error: ${snapshot.error}");
           return const Card(
             child: ListTile(
               leading: Icon(Icons.lock, color: Colors.blue),
-              title: Text("Loading..."),
+              title: Text("Error loading status"),
+            ),
+          );
+        }
+        if (!snapshot.hasData || snapshot.data?.snapshot.value == null) {
+          print("No status snapshot data at /users/${_auth.currentUser!.uid}/vehicleData/status");
+          return const Card(
+            child: ListTile(
+              leading: Icon(Icons.lock, color: Colors.blue),
+              title: Text("No door status available"),
             ),
           );
         }
         print("Status data: ${snapshot.data!.snapshot.value}");
-        var data = snapshot.data!.snapshot.value as Map<dynamic, dynamic>;
-        String doorStatus = data['doorStatus'] ?? "Unknown";
-        String timestamp = data['timestamp'] ?? "N/A";
+        dynamic data = snapshot.data!.snapshot.value;
+        String doorStatus = "Unknown";
+        String timestamp = "N/A";
+        if (data is Map<dynamic, dynamic>) {
+          doorStatus = data['doorStatus'] ?? "Unknown";
+          timestamp = data['timestamp'] ?? "N/A";
+          if (doorStatus == "Door Opened") {
+            _showNotification("Door Alert", "Door has been opened for $timestamp");
+          }
+        } else {
+          print("Unexpected status data type: ${data.runtimeType}");
+        }
         return Card(
           child: ListTile(
             leading: const Icon(Icons.lock, color: Colors.blue),
@@ -177,25 +236,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .ref()
           .child('users')
           .child(_auth.currentUser!.uid)
-          .child('vehicleData/sensors/voltageHistory')
+          .child('vehicleData/sensors')
           .onValue,
       builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data?.snapshot.value == null) {
-          print("No voltage history data");
+        if (snapshot.hasError) {
+          print("Voltage snapshot error: ${snapshot.error}");
           return const Card(
             child: Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text("Loading battery data..."),
+              child: Text("Error loading voltage data"),
             ),
           );
         }
-        print("Voltage history: ${snapshot.data!.snapshot.value}");
-        List<dynamic> voltageHistory = snapshot.data!.snapshot.value as List<dynamic>;
-        List<FlSpot> spots = voltageHistory
-            .asMap()
-            .entries
-            .map((e) => FlSpot(e.key.toDouble(), (e.value as num).toDouble()))
-            .toList();
+        if (!snapshot.hasData || snapshot.data?.snapshot.value == null) {
+          print('No voltage data at /users/${_auth.currentUser!.uid}/vehicleData/sensors');
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text("No voltage data available"),
+            ),
+          );
+        }
+        dynamic sensorsData = snapshot.data!.snapshot.value;
+        List<double> voltageHistory = [];
+        if (sensorsData is Map<dynamic, dynamic>) {
+          if (sensorsData['voltageHistory'] != null) {
+            dynamic history = sensorsData['voltageHistory'];
+            if (history is Map<dynamic, dynamic>) {
+              history.forEach((key, value) {
+                if (value is num) {
+                  voltageHistory.add(value.toDouble());
+                } else {
+                  print('Invalid voltage at $key: $value');
+                }
+              });
+            } else if (history is List) {
+              for (var value in history) {
+                if (value is num) {
+                  voltageHistory.add(value.toDouble());
+                } else {
+                  print('Invalid voltage in list: $value');
+                }
+              }
+            }
+          }
+          if (voltageHistory.isNotEmpty) {
+            double latestVoltage = voltageHistory.last;
+            if (latestVoltage < 12.0) {
+              _showNotification("Low Battery", "Voltage is $latestVoltage V - Charge soon!");
+            }
+          }
+        } else {
+          print("Unexpected sensors data type: ${sensorsData.runtimeType}");
+        }
+        if (voltageHistory.isEmpty) {
+          print('No valid voltage history after parsing');
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text("No valid voltage data"),
+            ),
+          );
+        }
+        print('Voltage history: $voltageHistory');
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -204,11 +307,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 const Text(
                   "Vehicle Battery Voltage",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.blue),
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
-                  height: 150,
+                  height: 200,
                   child: LineChart(
                     LineChartData(
                       titlesData: FlTitlesData(
@@ -217,9 +320,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             showTitles: true,
                             getTitlesWidget: (value, meta) => Text(
                               '${value.toInt()}',
-                              style: const TextStyle(fontSize: 10),
+                              style: const TextStyle(fontSize: 12, color: Colors.black54),
                             ),
                             interval: 1,
+                            reservedSize: 30,
                           ),
                         ),
                         leftTitles: AxisTitles(
@@ -227,30 +331,80 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             showTitles: true,
                             getTitlesWidget: (value, meta) => Text(
                               '${value.toInt()}V',
-                              style: const TextStyle(fontSize: 10),
+                              style: const TextStyle(fontSize: 12, color: Colors.black54),
                             ),
                             interval: 1,
-                            reservedSize: 30,
+                            reservedSize: 40,
                           ),
                         ),
                         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                       ),
-                      borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey)),
-                      gridData: FlGridData(show: true),
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: true,
+                        horizontalInterval: 1,
+                        verticalInterval: 1,
+                        getDrawingHorizontalLine: (value) {
+                          return FlLine(
+                            color: Colors.grey.shade300,
+                            strokeWidth: 0.5,
+                          );
+                        },
+                        getDrawingVerticalLine: (value) {
+                          return FlLine(
+                            color: Colors.grey.shade300,
+                            strokeWidth: 0.5,
+                          );
+                        },
+                      ),
                       lineBarsData: [
                         LineChartBarData(
                           isCurved: true,
-                          color: Colors.blue,
-                          spots: spots,
+                          color: Colors.blue[700]!,
+                          barWidth: 2,
+                          spots: voltageHistory
+                              .asMap()
+                              .entries
+                              .map((e) => FlSpot(e.key.toDouble(), e.value))
+                              .toList(),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: Colors.blue.withOpacity(0.3),
+                            color: Colors.blue.withOpacity(0.1),
+                          ),
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                              radius: 3,
+                              color: Colors.blue[700]!,
+                              strokeWidth: 1,
+                              strokeColor: Colors.white,
+                            ),
                           ),
                         ),
                       ],
                       minY: 10,
                       maxY: 15,
+                      lineTouchData: LineTouchData(
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              return LineTooltipItem(
+                                '${spot.y.toStringAsFixed(2)}V',
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  backgroundColor: Colors.blue,
+                                ),
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -303,19 +457,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .child('vehicleData/sensors')
           .onValue,
       builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data?.snapshot.value == null) {
-          print("No GPS snapshot data");
+        if (snapshot.hasError) {
+          print("GPS snapshot error: ${snapshot.error}");
           return const Card(
             child: Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text("Loading GPS data..."),
+              child: Text("Error loading GPS data"),
+            ),
+          );
+        }
+        if (!snapshot.hasData || snapshot.data?.snapshot.value == null) {
+          print("No GPS snapshot data at /users/${_auth.currentUser!.uid}/vehicleData/sensors");
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text("No GPS data available"),
             ),
           );
         }
         print("GPS data: ${snapshot.data!.snapshot.value}");
-        var data = snapshot.data!.snapshot.value as Map<dynamic, dynamic>;
-        double latitude = (data['latitude'] ?? 0.0).toDouble();
-        double longitude = (data['longitude'] ?? 0.0).toDouble();
+        dynamic data = snapshot.data!.snapshot.value;
+        double latitude = 0.0;
+        double longitude = 0.0;
+        if (data is Map<dynamic, dynamic>) {
+          latitude = (data['latitude'] ?? 0.0).toDouble();
+          longitude = (data['longitude'] ?? 0.0).toDouble();
+        } else {
+          print("Unexpected GPS data type: ${data.runtimeType}");
+        }
         if (latitude == 0.0 && longitude == 0.0) {
           return const Card(
             child: Padding(

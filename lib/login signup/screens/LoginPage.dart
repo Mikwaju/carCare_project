@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:connectivity_plus/connectivity_plus.dart'; // Add for network check
+import 'package:carcare/DashboardPage.dart'; // Adjust path as needed
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,32 +11,73 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController(text: 'ukwajuabdul@gmail.com');
   final TextEditingController passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Check network connectivity
+  Future<bool> _checkInternetConnection() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
+  }
+
   Future<void> _login() async {
+    if (!await _checkInternetConnection()) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'No internet connection. Please check your network.';
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
+
     try {
-      await _auth.signInWithEmailAndPassword(
+      print('Attempting login with ${phoneController.text.trim()}');
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: phoneController.text.trim(),
         password: passwordController.text,
       );
-      Navigator.pushNamed(context, '/dashboard');
+      print('Login successful for ${userCredential.user!.uid}');
+      Navigator.pushReplacementNamed(context, '/dashboard'); // Replace instead of push
     } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: ${e.code} - ${e.message}');
       setState(() {
-        _errorMessage = e.message;
+        _errorMessage = _mapAuthError(e.code);
+      });
+    } catch (e) {
+      print('General exception: $e');
+      setState(() {
+        _errorMessage = 'Network error: Check your connection or Firebase setup';
       });
     } finally {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  // Map FirebaseAuthException codes to user-friendly messages
+  String _mapAuthError(String code) {
+    switch (code) {
+      case 'network-request-failed':
+        return 'Network error: Check your internet connection.';
+      case 'invalid-email':
+        return 'Invalid email format.';
+      case 'wrong-password':
+        return 'Incorrect password. Try again or reset it.';
+      case 'user-not-found':
+        return 'No account found with this email.';
+      case 'too-many-requests':
+        return 'Too many attempts. Try again later.';
+      default:
+        return 'Login failed. Please try again.';
     }
   }
 
