@@ -1,37 +1,43 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
 
 android {
     namespace = "com.example.carcare"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973" // Updated to the required version
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-        isCoreLibraryDesugaringEnabled = true // ✅ Corrected syntax
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
-    }
+    compileSdk = 35 // Replace with your actual compileSdk version
+    ndkVersion = "27.0.12077973"
 
     defaultConfig {
         applicationId = "com.example.carcare"
         minSdk = 23
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        targetSdk = 35 // Replace with your actual targetSdk version
+        versionCode = 1 // Replace with your actual versionCode
+        versionName = "1.0" // Replace with your actual versionName
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
+    }
+
+    kotlinOptions {
+        jvmTarget = "11"
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            // If you want to enable resource shrinking, enable minify too:
+            isMinifyEnabled = true          // Enable code shrinking
+            isShrinkResources = true        // Enable resource shrinking
+
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
@@ -41,5 +47,5 @@ flutter {
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4") // ✅ This is good
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

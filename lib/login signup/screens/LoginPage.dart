@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   String? _errorMessage;
+  bool _obscurePassword = true; // Added to control password visibility
 
   // Check network connectivity
   Future<bool> _checkInternetConnection() async {
@@ -164,17 +165,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 15),
                 TextField(
                   controller: passwordController,
-                  obscureText: true,
+                  obscureText: _obscurePassword, // Use state variable
                   decoration: InputDecoration(
                     prefixIcon: Icon(
                       Icons.lock_open,
                       color: Colors.blue,
                       size: 24,
                     ),
-                    suffixIcon: Icon(
-                      Icons.visibility,
-                      color: Colors.grey,
-                      size: 24,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.grey,
+                        size: 24,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword; // Toggle visibility
+                        });
+                      },
                     ),
                     labelText: "Enter your password",
                     border: OutlineInputBorder(

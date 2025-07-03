@@ -3,6 +3,15 @@ allprojects {
         google()
         mavenCentral()
     }
+//    subprojects {
+//        afterEvaluate { subproject ->
+//            val androidExt = subproject.extensions.findByName("android")
+//            if (androidExt is com.android.build.gradle.BaseExtension && subproject.name == "flutter_blue") {
+//                androidExt.namespace = "com.example.flutter_blue"
+//            }
+//        }
+//    }
+
 }
 
 val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()

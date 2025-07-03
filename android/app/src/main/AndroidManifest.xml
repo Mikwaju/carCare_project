@@ -1,15 +1,28 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.carcare">
 
-    <!-- Location permissions -->
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/> <!-- ✅ Notification permission -->
+
+    <!-- Required to open files with external apps -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
 
     <application
         android:label="carcare"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:requestLegacyExternalStorage="true">
 
-        <!-- Main activity -->
+        <!-- ✅ Add notification channel metadata -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="car_care_channel" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -20,7 +33,6 @@
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
 
-            <!-- Splash/initial loading theme -->
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
@@ -31,18 +43,18 @@
             </intent-filter>
         </activity>
 
-        <!-- Google Maps API key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDSXREjrmwa5wIO6JgARx-aHneE3hn-M9M" />
 
-        <!-- Required by Flutter -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Bluetooth service -->
+        <service android:name="com.pauldemarco.flutterblue.FlutterBlueService" />
     </application>
 
-    <!-- Used by Flutter's ProcessTextPlugin -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

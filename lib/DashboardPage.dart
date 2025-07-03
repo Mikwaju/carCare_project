@@ -4,8 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:carcare/MapScreen.dart'; // Replace with your actual MapsScreen path
-import 'package:carcare/ProfileScreen.dart'; // Replace with your actual ProfileScreen path
+import 'package:carcare/MapScreen.dart';
+import 'package:carcare/ProfileScreen.dart';
+import 'package:carcare/ReportScreen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -16,11 +17,21 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   String carType = "Loading...";
+  Map<String, double> tirePressures = {
+    "leftForward": 0.0,
+    "rightForward": 0.0,
+    "leftRear": 0.0,
+    "rightRear": 0.0,
+  }; // Store tire pressures
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseDatabase _database = FirebaseDatabase.instance;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
   FlutterLocalNotificationsPlugin();
+  bool _wasLowBatteryNotified = false;
+  bool _wasDoorOpenNotified = false;
+  String _latestDoorStatus = "Unknown";
+  double? _latestVoltage;
 
   @override
   void initState() {
@@ -56,6 +67,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (doc.exists) {
           setState(() {
             carType = doc['carType'] ?? "Unknown Car";
+            Map<String, dynamic>? pressureData = doc['tirePressure'] as Map<String, dynamic>?;
+            if (pressureData != null) {
+              tirePressures['leftForward'] = (pressureData['leftForward'] ?? 0.0).toDouble();
+              tirePressures['rightForward'] = (pressureData['rightForward'] ?? 0.0).toDouble();
+              tirePressures['leftRear'] = (pressureData['leftRear'] ?? 0.0).toDouble();
+              tirePressures['rightRear'] = (pressureData['rightRear'] ?? 0.0).toDouble();
+            }
           });
         } else {
           print("No user data in Firestore");
@@ -81,17 +99,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onTap: (index) {
           switch (index) {
             case 0:
-            // Already on Dashboard
+              break;
+            case 1:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ReportScreen()),
+              );
               break;
             case 2:
-            // Navigate to ProfileScreen
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ProfileScreen()),
               );
               break;
           }
-          // Add navigation logic if needed
         },
       ),
       body: SingleChildScrollView(
@@ -121,8 +142,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           IconButton(
                             onPressed: () {
+                              String message = _latestVoltage != null
+                                  ? "Door: $_latestDoorStatus\nBattery: ${_latestVoltage!.toStringAsFixed(2)} V"
+                                  : "Door: $_latestDoorStatus\nBattery: No data";
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Notifications not implemented yet")),
+                                SnackBar(content: Text(message)),
                               );
                             },
                             icon: const Icon(Icons.notifications, color: Colors.white),
@@ -133,12 +157,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => MapsScreen(userId: _auth.currentUser!.uid),
+                                    builder: (context) =>
+                                        MapsScreen(userId: _auth.currentUser!.uid),
                                   ),
                                 );
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Please log in to view the map")),
+                                  const SnackBar(
+                                      content: Text("Please log in to view the map")),
                                 );
                               }
                             },
@@ -200,18 +226,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           );
         }
-        print("Status data: ${snapshot.data!.snapshot.value}");
         dynamic data = snapshot.data!.snapshot.value;
         String doorStatus = "Unknown";
         String timestamp = "N/A";
         if (data is Map<dynamic, dynamic>) {
           doorStatus = data['doorStatus'] ?? "Unknown";
           timestamp = data['timestamp'] ?? "N/A";
-          if (doorStatus == "Door Opened") {
-            _showNotification("Door Alert", "Door has been opened for $timestamp");
+          _latestDoorStatus = doorStatus;
+          if (doorStatus == "Door Opened" && !_wasDoorOpenNotified) {
+            _showNotification("Door Alert", "Door has been opened at $timestamp");
+            _wasDoorOpenNotified = true;
+          } else if (doorStatus != "Door Opened") {
+            _wasDoorOpenNotified = false;
           }
-        } else {
-          print("Unexpected status data type: ${data.runtimeType}");
         }
         return Card(
           child: ListTile(
@@ -266,31 +293,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
               history.forEach((key, value) {
                 if (value is num) {
                   voltageHistory.add(value.toDouble());
-                } else {
-                  print('Invalid voltage at $key: $value');
                 }
               });
             } else if (history is List) {
               for (var value in history) {
                 if (value is num) {
                   voltageHistory.add(value.toDouble());
-                } else {
-                  print('Invalid voltage in list: $value');
                 }
               }
             }
           }
           if (voltageHistory.isNotEmpty) {
             double latestVoltage = voltageHistory.last;
-            if (latestVoltage < 12.0) {
-              _showNotification("Low Battery", "Voltage is $latestVoltage V - Charge soon!");
+            _latestVoltage = latestVoltage;
+            if (latestVoltage < 12.0 && !_wasLowBatteryNotified) {
+              _showNotification(
+                  "Low Battery", "Voltage is ${latestVoltage.toStringAsFixed(2)} V - Charge soon!");
+              _wasLowBatteryNotified = true;
+            } else if (latestVoltage >= 12.0) {
+              _wasLowBatteryNotified = false;
             }
           }
-        } else {
-          print("Unexpected sensors data type: ${sensorsData.runtimeType}");
         }
         if (voltageHistory.isEmpty) {
-          print('No valid voltage history after parsing');
           return const Card(
             child: Padding(
               padding: EdgeInsets.all(16.0),
@@ -298,7 +323,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           );
         }
-        print('Voltage history: $voltageHistory');
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -333,7 +357,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               '${value.toInt()}V',
                               style: const TextStyle(fontSize: 12, color: Colors.black54),
                             ),
-                            interval: 1,
+                            interval: 2,
                             reservedSize: 40,
                           ),
                         ),
@@ -347,7 +371,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: true,
-                        horizontalInterval: 1,
+                        horizontalInterval: 2,
                         verticalInterval: 1,
                         getDrawingHorizontalLine: (value) {
                           return FlLine(
@@ -387,8 +411,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                       ],
-                      minY: 10,
-                      maxY: 15,
+                      minY: 0,
+                      maxY: 16,
                       lineTouchData: LineTouchData(
                         touchTooltipData: LineTouchTooltipData(
                           getTooltipItems: (touchedSpots) {
@@ -435,11 +459,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
               childAspectRatio: 1,
-              children: const [
-                _TirePressureWidget(title: "Left Forward Tire", pressure: 34.0),
-                _TirePressureWidget(title: "Right Forward Tire", pressure: 34.5),
-                _TirePressureWidget(title: "Left Rear Tire", pressure: 33.8),
-                _TirePressureWidget(title: "Right Rear Tire", pressure: 34.2),
+              children: [
+                _TirePressureWidget(
+                    title: "Left Forward Tire",
+                    pressure: tirePressures['leftForward'] ?? 0.0),
+                _TirePressureWidget(
+                    title: "Right Forward Tire",
+                    pressure: tirePressures['rightForward'] ?? 0.0),
+                _TirePressureWidget(
+                    title: "Left Rear Tire",
+                    pressure: tirePressures['leftRear'] ?? 0.0),
+                _TirePressureWidget(
+                    title: "Right Rear Tire",
+                    pressure: tirePressures['rightRear'] ?? 0.0),
               ],
             ),
           ],
@@ -475,15 +507,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           );
         }
-        print("GPS data: ${snapshot.data!.snapshot.value}");
         dynamic data = snapshot.data!.snapshot.value;
         double latitude = 0.0;
         double longitude = 0.0;
         if (data is Map<dynamic, dynamic>) {
           latitude = (data['latitude'] ?? 0.0).toDouble();
           longitude = (data['longitude'] ?? 0.0).toDouble();
-        } else {
-          print("Unexpected GPS data type: ${data.runtimeType}");
         }
         if (latitude == 0.0 && longitude == 0.0) {
           return const Card(
